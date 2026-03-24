@@ -1,0 +1,47 @@
+.premium-folder-locked {
+  position: relative;
+  overflow: hidden;
+}
+.premium-folder-locked::before {
+  content: "🔒 PREMIUM";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.1);
+  text-shadow: 0 0 20px var(--neon-pink);
+  z-index: 2;
+  pointer-events: none;
+}
+.premium-folder-locked::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,0,76,0.8);
+  z-index: 1;
+}
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 30px;
+}
+.folder-card {
+  background: rgba(0,240,255,0.15);
+  border: 2px solid var(--neon-blue);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.4s;
+  position: relative;
+}
+.folder-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px var(--neon-blue);
+}
+.folder-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
