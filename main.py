@@ -8,7 +8,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import InlineQueryResultAudio
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_webhook
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 
 from deezer import Client as DeezerClient
 
@@ -20,13 +20,13 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
 # Webhook settings
-WEBHOOK_HOST = os.getenv("WEBHOOK_HOST") # e.g., https://probot-production-c79c.up.railway.app
+WEBHOOK_HOST = os.getenv("WEBHOOK_HOST", "https://probot-production-c79c.up.railway.app")
 WEBHOOK_PATH = f"/webhook/bot/{BOT_TOKEN}"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 # Webserver settings
 WEBAPP_HOST = "0.0.0.0"
-WEBAPP_PORT = os.getenv("PORT", 8080)
+WEBAPP_PORT = int(os.getenv("PORT", 8080))
 
 # Initialize Deezer client
 deezer_client = DeezerClient()
@@ -34,7 +34,12 @@ deezer_client = DeezerClient()
 async def search_deezer(query):
     try:
         tracks = deezer_client.search(query)
-        return [{\'title\': track.title, \'artist\': track.artist.name, \'preview\': track.preview, \'duration\': track.duration} for track in tracks[:5]]
+        return [{
+            'title': track.title,
+            'artist': track.artist.name,
+            'preview': track.preview,
+            'duration': track.duration
+        } for track in tracks[:5]]
     except Exception as e:
         logging.error(f"Error searching Deezer: {e}")
         return []
@@ -79,7 +84,7 @@ async def main():
 
         response_text = "<b>Deezer Results:</b>\n"
         for track in deezer_results:
-            response_text += f"- {track[\'artist\']} - {track[\'title\']} (<a href=\"{track[\'preview\']}\">Preview</a>)\n"
+            response_text += f"- {track['artist']} - {track['title']} (<a href=\"{track['preview']}\">Preview</a>)\n"
         
         await message.answer(response_text)
 
@@ -94,14 +99,14 @@ async def main():
 
         results = []
         for i, track in enumerate(deezer_results):
-            if track[\'preview\']:
+            if track['preview']:
                 results.append(
                     InlineQueryResultAudio(
                         id=f"deezer_{i}",
-                        audio_url=track[\'preview\'],
-                        title=f"{track[\'artist\']} - {track[\'title\']}",
-                        performer=track[\'artist\'],
-                        audio_duration=track[\'duration\']
+                        audio_url=track['preview'],
+                        title=f"{track['artist']} - {track['title']}",
+                        performer=track['artist'],
+                        audio_duration=track['duration']
                     )
                 )
 
@@ -135,9 +140,15 @@ async def main():
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-    setup_webhook(app, dispatcher=dp, bot=bot, path=WEBHOOK_PATH)
 
-    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
+    # Start the web server
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, WEBAPP_HOST, WEBAPP_PORT)
+    await site.start()
+
+    # Keep the main task running indefinitely
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
