@@ -1,2 +1,3 @@
 aiogram==3.27.0
 deezer-python==7.3.0
+aiohttp==3.9.5
